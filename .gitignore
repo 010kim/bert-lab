@@ -1,3 +1,4 @@
 /bert-env
 /glue_data
 /models
+*.pyc

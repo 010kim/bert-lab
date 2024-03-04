@@ -2,7 +2,9 @@ from absl import app
 from absl import flags
 from absl import logging
 
+import csv
 import modeling
+import os
 import tokenization
 
 FLAGS = flags.FLAGS
@@ -38,7 +40,28 @@ flags.DEFINE_integer('num_tpu_cores', 8, 'Only used if `use_tpu` is True')
 
 
 class DataProcessor():
-    pass
+    """Base class for sequence classification data sets"""
+
+    def get_train_examples(self, data_dir):
+        raise NotImplementedError
+    
+    def get_dev_examples(self, data_dir):
+        raise NotImplementedError
+
+    def get_test_examples(self, data_dir):
+        raise NotImplementedError
+    
+    def get_labels(self):
+        raise NotImplementedError
+    
+    @classmethod
+    def _read_tsv(cls, input_file, quotechar=None):
+        with open(input_file, 'r') as f:
+            reader = csv.erader(f, delimiter='\t', quotechar=quotechar)
+            lines = []
+            for line in reader:
+                lines.append(line)
+            return lines
 
 class XnliProcessor(DataProcessor):
     pass
@@ -49,7 +72,12 @@ class MnliProcessor(DataProcessor):
 
 
 class MrpcProcessor(DataProcessor):
-    pass
+    def get_train_examples(self, data_dir):
+        return self._create_examples(self._read_tsv(os.path.join(data_dir, 'train.tsv')), 'train')
+    
+    def _create_examples(self, lines, set_type):
+        #continue
+        pass
 
 
 class ColaProcessor(DataProcessor):
@@ -70,6 +98,20 @@ def main(argv):
         raise ValueError("At least one of `do_train`, `do_eval` or `do_predict' must be True.")
     
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
+
+    if FLAGS.max_seq_length > bert_config.max_position_embeddings:
+        raise ValueError("Cannot use sequence length")
+
+    if not os.path.isdir(FLAGS.output_dir):
+        os.makedirs(FLAGS.output_dir)
+
+    task_name = FLAGS.task_name.lower()
+    
+    if task_name not in processors:
+        raise ValueError(f"Task not found: {task_name}")
+    
+    processor = processors[task_name]()
+    #
 
     logging.info("PASS")
 

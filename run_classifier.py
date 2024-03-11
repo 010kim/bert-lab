@@ -39,6 +39,15 @@ flags.DEFINE_string('master', None, '[Optional] Tensorflow master URL')
 flags.DEFINE_integer('num_tpu_cores', 8, 'Only used if `use_tpu` is True')
 
 
+class InputExample():
+    "A single training/test example for simple sequence classification"
+    def __init__(self, guid, text_a, text_b=None, label=None):
+        self.guid = guid
+        self.text_a = text_a
+        self.text_b = text_b
+        self.label = label
+
+
 class DataProcessor():
     """Base class for sequence classification data sets"""
 
@@ -57,11 +66,12 @@ class DataProcessor():
     @classmethod
     def _read_tsv(cls, input_file, quotechar=None):
         with open(input_file, 'r') as f:
-            reader = csv.erader(f, delimiter='\t', quotechar=quotechar)
+            reader = csv.reader(f, delimiter='\t', quotechar=quotechar)
             lines = []
             for line in reader:
                 lines.append(line)
             return lines
+
 
 class XnliProcessor(DataProcessor):
     pass
@@ -75,9 +85,29 @@ class MrpcProcessor(DataProcessor):
     def get_train_examples(self, data_dir):
         return self._create_examples(self._read_tsv(os.path.join(data_dir, 'train.tsv')), 'train')
     
+    def get_dev_examples(self, data_dir):
+        return self._create_examples(self._read_tsv(os.path.join(data_dir, 'dev.tsv')), 'dev')
+
+    def get_test_examples(self, data_dir):
+        return self._create_examples(self._read_tsv(os.path.join(data_dir, 'test.tsv')), 'test')
+
+    def get_labels(self):
+        return ['0', '1']
+
     def _create_examples(self, lines, set_type):
-        #continue
-        pass
+        examples = []
+        for (i, line) in enumerate(lines):
+            if i == 0:
+                continue
+            guid = f"{set_type}-{i}"
+            text_a = tokenization.convert_to_unicode(line[3])
+            text_b = tokenization.convert_to_unicode(line[4])
+            if set_type == "test":
+                label = "0"
+            else:
+                label = tokenization.convert_to_unicode(line[0])
+            examples.append(InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
+        return examples
 
 
 class ColaProcessor(DataProcessor):
@@ -111,7 +141,11 @@ def main(argv):
         raise ValueError(f"Task not found: {task_name}")
     
     processor = processors[task_name]()
-    #
+    label_list = processor.get_labels()
+    
+    tokenizer = tokenization.FullTokenizer(vocab_file=FLAGS.vocab_file, do_lower_case=FLAGS.do_lower_case)
+
+    # finish tokenizer and skip tpu related part
 
     logging.info("PASS")
 

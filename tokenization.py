@@ -72,7 +72,7 @@ class FullTokenizer():
     def __init__(self, vocab_file, do_lower_case=True):
         self.vocab = load_vocab(vocab_file)
         self.inv_vocab = {v: k for k, v in self.vocab.items()}
-        #self.basic_tokenizer = BasicTokenizer(do_lower_case=do_lower_case)
+        self.basic_tokenizer = BasicTokenizer(do_lower_case=do_lower_case)
         #self.wordpiece_tokenizer = WordpieceTokenizer(vocab=self.vocab)
         
         def tokenize(self, text):
@@ -83,3 +83,26 @@ class FullTokenizer():
         
         def convert_ids_to_tokens(sef, ids):
             raise NotImplementedError
+
+
+class BasicTokenizer():
+    """punctuation splitting, lower casing, etc"""
+    
+    def __init__(self, do_lower_case=True):
+        self.do_lower_case = do_lower_case
+        
+    def tokenize(self, text):
+        text = convert_to_unicode(text)
+        text = self._clean_text(self, text)
+        
+    def _clean_text(self, text):
+        """invalid character removal, whitespace cleanup"""
+        output = []
+        for char in text:
+            cp = ord(char)
+            #continue workin 240311
+
+
+class WordpieceTokenizer():
+    pass
+
